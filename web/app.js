@@ -188,6 +188,7 @@
         if (!map.getPane('population')) map.createPane('population').style.zIndex = 350; // under heat/hit markers
         var layer = L.geoJSON(geo, {
           pane: 'population',
+          attribution: 'Community boundaries: Dubai Municipality / Dubai Pulse (open data)',
           style: function (f) {
             var row = byNum[f.properties.community_num];
             return { color: '#555', weight: 0.7, fillColor: App.coverageColor(row), fillOpacity: row && row.population > 0 ? 0.6 : 0.25 };

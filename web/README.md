@@ -55,9 +55,14 @@ rate limit (60 req/min). `ENVIRONMENT` in `.env` selects STG or PROD.
   `rta_bus_routes-open-api` and `rta_bus_ridership-open-api` (ridership, PROD
   only for real volume). Data (c) Roads and Transport Authority / Dubai Digital
   Authority, via Dubai Data.
-- **`data/communities.geojson`**: Dubai community polygons (226 features) from a
-  third-party GitHub repository. **Provenance and license are UNVERIFIED** —
-  confirm the original source and terms before any public or commercial
-  redistribution, and keep this attribution.
+- **`data/communities.geojson`**: Dubai community polygons (226 features),
+  attributed to **Dubai Municipality / Dubai Pulse open data** (the boundaries
+  match the `dm_community` administrative level). Obtained via a third-party
+  GitHub mirror (`Krishna99008594/MapFiles`) that states **no license of its
+  own**; the underlying Dubai Municipality open data carries an attribution
+  requirement and "not specified" reuse terms (verified 2026-11-17). The map and
+  this README credit the source accordingly. For commercial reuse, confirm terms
+  with Dubai Municipality / Dubai Pulse directly, or substitute an
+  explicitly-licensed boundary source (e.g. OpenStreetMap / ODbL).
 - Basemap tiles and Leaflet are loaded from their public providers; respect
   their attribution requirements (shown on the map).
