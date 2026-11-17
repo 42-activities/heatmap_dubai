@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { data } from '../data'
 import type { Coverage, Route, Stop } from '../data'
 import DataTable from '../components/DataTable'
@@ -48,19 +48,34 @@ export default function Explorer() {
   const [tab, setTab] = useState<TabKey>('stops')
   const [query, setQuery] = useState('')
   const [state, setState] = useState<State>({ status: 'loading' })
+  const [reloadKey, setReloadKey] = useState(0)
+  const cache = useRef(new Map<TabKey, unknown[]>())
 
   useEffect(() => {
     let live = true
+    const cached = cache.current.get(tab)
+    if (cached) {
+      setState({ status: 'ready', tab, rows: cached }) // instant on tab re-select
+      return
+    }
     setState({ status: 'loading' })
     load(tab)
-      .then((rows) => live && setState({ status: 'ready', tab, rows }))
+      .then((rows) => {
+        cache.current.set(tab, rows)
+        if (live) setState({ status: 'ready', tab, rows })
+      })
       .catch((e: unknown) =>
         live && setState({ status: 'error', message: e instanceof Error ? e.message : 'Failed to load data' }),
       )
     return () => {
       live = false
     }
-  }, [tab])
+  }, [tab, reloadKey])
+
+  const retry = () => {
+    cache.current.delete(tab)
+    setReloadKey((k) => k + 1)
+  }
 
   const view: State = state.status === 'ready' && state.tab !== tab ? { status: 'loading' } : state
 
@@ -70,7 +85,14 @@ export default function Explorer() {
     if (view.status !== 'ready') return []
     const q = query.trim().toLowerCase()
     if (!q) return view.rows
-    return view.rows.filter((r) => columns.some((c) => String(c.accessor(r)).toLowerCase().includes(q)))
+    return view.rows.filter((r) =>
+      columns.some((c) => {
+        const v = c.accessor(r)
+        if (String(v).toLowerCase().includes(q)) return true
+        // also match the displayed (formatted) value, e.g. "90.0%" or "1,234"
+        return c.format ? c.format(v).toLowerCase().includes(q) : false
+      }),
+    )
   }, [view, query, columns])
 
   const keyCol = columns[0]
@@ -102,7 +124,10 @@ export default function Explorer() {
       />
       {view.status === 'loading' && <p role="status">Loading {tab}…</p>}
       {view.status === 'error' && (
-        <p role="alert" className="error">Failed to load {tab}: {view.message}</p>
+        <p role="alert" className="error">
+          Failed to load {tab}: {view.message}{' '}
+          <button type="button" onClick={retry}>Retry</button>
+        </p>
       )}
       {view.status === 'ready' && (
         <>

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS fact_coverage (
 CREATE TABLE IF NOT EXISTS fact_passengers_monthly (
     passenger_sk bigserial PRIMARY KEY,
     stop_id      integer NOT NULL REFERENCES dim_stop (stop_id),
-    month        text NOT NULL,                 -- 'YYYY-MM'
+    month        text NOT NULL CHECK (month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),  -- 'YYYY-MM'
     direction    text NOT NULL CHECK (direction IN ('in', 'out')),
     count        integer NOT NULL DEFAULT 0,
     placeholder  boolean NOT NULL DEFAULT false,

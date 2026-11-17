@@ -98,6 +98,8 @@ def write_json(out_dir, name, obj):
 
 
 def summarize_routes(records):
+    # stop_count is the number of source rows for a route (route-stop sequence
+    # entries across directions), NOT the number of distinct stops.
     routes = {}
     for r in records:
         name = r.get("route_name")

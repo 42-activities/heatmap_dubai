@@ -11,7 +11,7 @@ export default function ChartCard({ title, children }: { title: string; children
   return (
     <figure className="chart" data-testid="chart">
       <figcaption className="chart__title">{title}</figcaption>
-      <div className="chart__body">{children}</div>
+      <div className="chart__body" role="img" aria-label={title}>{children}</div>
     </figure>
   )
 }
