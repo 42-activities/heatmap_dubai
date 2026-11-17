@@ -1,8 +1,17 @@
-"""Export DDA STG data to static JSON for the website (web/data/)."""
+"""Export DDA data to static JSON for the website (web/data/).
+
+Reference datasets (stops/coverage/routes) come from whichever environment the
+credentials target. Passenger data is placeholder by default; `--passengers real`
+aggregates the ridership dataset into per-station monthly in/out totals (needs a
+PROD grant for `rta_bus_ridership-open-api` — STG has only a sample row).
+"""
 import argparse
 import json
 import random
+import re
 import sys
+import time
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -12,9 +21,16 @@ import dda  # noqa: E402
 STOPS_PATH = "rta/rta_bus_stop_details-open-api"
 COVERAGE_PATH = "rta/rta_bus_network_coverage-open-api"
 ROUTES_PATH = "rta/rta_bus_routes-open-api"
+RIDERSHIP_PATH = "rta/rta_bus_ridership-open-api"
 STOPS_TOTAL_CAP = 500000
-SECTIONS = ("stops", "coverage", "routes")
+SECTIONS = ("stops", "coverage", "routes", "passengers")
 OUT_DIR = Path(__file__).resolve().parent.parent / "web" / "data"
+
+# txn_type code -> travel direction. Only 'CKA' is seen in STG's single sample
+# row (assumed a check-in / boarding); the check-out code is a convention guess.
+# VERIFY on PROD with scripts/profile_ridership.py and update this map before
+# trusting the numbers — aggregate_ridership reports any unmapped codes it meets.
+TXN_TYPE_DIRECTION = {"CKA": "in", "CKO": "out"}
 
 
 def _num(v):
@@ -66,6 +82,96 @@ def build_placeholder_passengers(stops, year=2026, seed=20260101):
             })
         stations[str(sid)] = months
     return {"placeholder": True, "year": year, "stations": stations}
+
+
+def _norm_name(s):
+    """Loose normalization for matching location names to stop names."""
+    return re.sub(r"[^a-z0-9]+", " ", str(s or "").lower()).strip()
+
+
+def aggregate_ridership(records, year=2026, type_direction=TXN_TYPE_DIRECTION):
+    """Aggregate ridership transactions into per-location monthly in/out totals.
+
+    Each row is one tap: a check-in (``in``) counts at ``start_location`` and a
+    check-out (``out``) at ``end_location``, by ``txn_type``. Only rows whose
+    ``txn_date`` falls in ``year`` are counted. ``records`` may be a generator
+    (single pass). Returns ``(agg, report)`` where
+    ``agg = {location: {'YYYY-MM': {'in': n, 'out': n}}}``.
+    """
+    agg = {}
+    types, unmapped = Counter(), Counter()
+    total_rows = year_rows = 0
+    prefix = f"{year}-"
+    for r in records:
+        total_rows += 1
+        txn_type = r.get("txn_type")
+        types[txn_type] += 1
+        date = str(r.get("txn_date") or "")
+        if not date.startswith(prefix):
+            continue
+        year_rows += 1
+        direction = type_direction.get(txn_type)
+        if direction is None:
+            unmapped[txn_type] += 1
+            continue
+        loc = r.get("start_location") if direction == "in" else r.get("end_location")
+        if not loc:
+            continue
+        slot = agg.setdefault(loc, {}).setdefault(date[:7], {"in": 0, "out": 0})
+        slot[direction] += 1
+    report = {"rows": total_rows, "year_rows": year_rows,
+              "txn_types": dict(types), "unmapped_types": dict(unmapped)}
+    return agg, report
+
+
+def passengers_from_agg(agg, stops, year=2026):
+    """Key a per-location aggregate by stop_id (via stop-name matching) and emit
+    the passengers payload shape, with all 12 months per matched station.
+    Returns ``(payload, report)``."""
+    by_norm = {}
+    for s in stops:
+        by_norm.setdefault(_norm_name(s.get("stop_name")), s.get("stop_id"))
+    per_stop, matched, unmatched = {}, 0, 0
+    for loc, months in agg.items():
+        sid = by_norm.get(_norm_name(loc))
+        if sid is None:
+            unmatched += 1
+            continue
+        matched += 1
+        dst = per_stop.setdefault(sid, {})
+        for month, io in months.items():
+            d = dst.setdefault(month, {"in": 0, "out": 0})
+            d["in"] += io["in"]
+            d["out"] += io["out"]
+    labels = [f"{year}-{m:02d}" for m in range(1, 13)]
+    stations = {
+        str(sid): [{"month": m, "in": md.get(m, {}).get("in", 0),
+                    "out": md.get(m, {}).get("out", 0)} for m in labels]
+        for sid, md in per_stop.items()
+    }
+    payload = {"placeholder": False, "year": year, "stations": stations}
+    report = {"locations": len(agg), "matched_locations": matched,
+              "unmatched_locations": unmatched, "stations": len(stations)}
+    return payload, report
+
+
+def stream_ridership(get_json, page_size=1000, min_interval=1.05, columns=None, max_pages=100000):
+    """Yield ridership rows page by page (so millions of rows aren't held in
+    memory), throttled to respect the rate limit. ``columns`` limits the fetched
+    fields to cut payload."""
+    base = {"column": ",".join(columns)} if columns else {}
+    last = 0.0
+    for page in range(1, max_pages + 1):
+        if min_interval and page > 1:
+            wait = min_interval - (time.monotonic() - last)
+            if wait > 0:
+                time.sleep(wait)
+        last = time.monotonic()
+        batch = (get_json(RIDERSHIP_PATH, {**base, "page": page, "pageSize": page_size})
+                 or {}).get("results") or []
+        yield from batch
+        if len(batch) < page_size:
+            return
 
 
 def _int0(v):
@@ -124,21 +230,34 @@ def parse_only(value):
     return parts
 
 
+def _load_stops():
+    sp = OUT_DIR / "stops.json"
+    if not sp.exists():
+        raise SystemExit("passengers needs web/data/stops.json — run the 'stops' section first")
+    return json.loads(sp.read_text(encoding="utf-8"))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", help="comma list of: " + ",".join(SECTIONS) + " (default all)")
+    ap.add_argument("--passengers", choices=("placeholder", "real"), default="placeholder",
+                    help="passenger source: 'placeholder' (SAMPLE, default) or 'real' "
+                         "(aggregate ridership into monthly in/out per station)")
+    args = ap.parse_args(argv)
     try:
-        only = parse_only(ap.parse_args(argv).only)
+        only = parse_only(args.only)
     except ValueError as e:
         ap.error(str(e))
     cfg = dda.get_config()
     token = dda.fetch_token(cfg)
     get_json = dda.make_getter(cfg.base_url, token)
     meta_path = OUT_DIR / "meta.json"
-    counts = {}
+    counts, placeholder_flag = {}, True
     if only != set(SECTIONS) and meta_path.exists():
-        counts = json.loads(meta_path.read_text(encoding="utf-8")).get("counts", {})
-    msg = []
+        prev = json.loads(meta_path.read_text(encoding="utf-8"))
+        counts = prev.get("counts", {})
+        placeholder_flag = prev.get("placeholder", {}).get("passengers", True)
+    msg, stops = [], None
     if "stops" in only:
         # Probe the server's honored page size (fetch_records treats short pages as last).
         probe = get_json(STOPS_PATH, {"page": 1, "pageSize": 5000}).get("results") or []
@@ -149,9 +268,7 @@ def main(argv=None):
         if len(raw_stops) >= STOPS_TOTAL_CAP:
             raise RuntimeError("stops fetch hit the cap; data may be truncated")
         stops = dedupe_stops(raw_stops)
-        passengers = build_placeholder_passengers(stops)
         write_json(OUT_DIR, "stops.json", stops)
-        write_json(OUT_DIR, "passengers.json", passengers)
         counts["stops"] = len(stops)
         msg.append(f"raw stops={len(raw_stops)} stops={len(stops)}")
     if "coverage" in only:
@@ -166,11 +283,32 @@ def main(argv=None):
         write_json(OUT_DIR, "routes.json", routes)
         counts["routes"] = len(routes)
         msg.append(f"raw routes={len(raw_routes)} routes={len(routes)}")
+    if "passengers" in only:
+        if stops is None:
+            stops = _load_stops()
+        if args.passengers == "real":
+            agg, agg_report = aggregate_ridership(stream_ridership(
+                get_json, columns=["txn_type", "txn_date", "start_location", "end_location"]))
+            payload, match_report = passengers_from_agg(agg, stops)
+            print(f"ridership {agg_report}")
+            print(f"station match {match_report}")
+            if payload["stations"]:
+                placeholder_flag = False
+            else:
+                payload = build_placeholder_passengers(stops)
+                placeholder_flag = True
+                print("no real 2026 ridership reached -> wrote labeled placeholder passengers")
+        else:
+            payload = build_placeholder_passengers(stops)
+            placeholder_flag = True
+        write_json(OUT_DIR, "passengers.json", payload)
+        counts["passenger_stations"] = len(payload["stations"])
+        msg.append(f"passenger stations={len(payload['stations'])} placeholder={placeholder_flag}")
     write_json(OUT_DIR, "meta.json", {
         "environment": cfg.environment,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "counts": counts,
-        "placeholder": {"passengers": True},
+        "placeholder": {"passengers": placeholder_flag},
     })
     print(" ".join(msg))
     return 0
