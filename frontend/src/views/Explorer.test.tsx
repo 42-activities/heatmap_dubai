@@ -75,4 +75,17 @@ describe('Explorer', () => {
     render(<Explorer />)
     expect(await screen.findByRole('alert')).toHaveTextContent(/boom/)
   })
+
+  it('never renders previous tab rows with the new tab columns', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(<Explorer />)
+    await screen.findByText('Stop 1')
+    fireEvent.click(screen.getByRole('tab', { name: /routes/i }))
+    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    expect(screen.queryByText('Stop 1')).not.toBeInTheDocument()
+    expect(await screen.findByText('R1')).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/NaN|undefined/)
+    expect(err).not.toHaveBeenCalled()
+    err.mockRestore()
+  })
 })

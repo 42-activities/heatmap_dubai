@@ -36,7 +36,7 @@ const routeCols: Column<Route>[] = [
 type State =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; rows: unknown[] }
+  | { status: 'ready'; tab: TabKey; rows: unknown[] }
 
 function load(tab: TabKey): Promise<unknown[]> {
   if (tab === 'stops') return data.getAllStops()
@@ -53,7 +53,7 @@ export default function Explorer() {
     let live = true
     setState({ status: 'loading' })
     load(tab)
-      .then((rows) => live && setState({ status: 'ready', rows }))
+      .then((rows) => live && setState({ status: 'ready', tab, rows }))
       .catch((e: unknown) =>
         live && setState({ status: 'error', message: e instanceof Error ? e.message : 'Failed to load data' }),
       )
@@ -62,14 +62,16 @@ export default function Explorer() {
     }
   }, [tab])
 
+  const view: State = state.status === 'ready' && state.tab !== tab ? { status: 'loading' } : state
+
   const columns = (tab === 'stops' ? stopCols : tab === 'communities' ? communityCols : routeCols) as Column<unknown>[]
 
   const filtered = useMemo(() => {
-    if (state.status !== 'ready') return []
+    if (view.status !== 'ready') return []
     const q = query.trim().toLowerCase()
-    if (!q) return state.rows
-    return state.rows.filter((r) => columns.some((c) => String(c.accessor(r)).toLowerCase().includes(q)))
-  }, [state, query, columns])
+    if (!q) return view.rows
+    return view.rows.filter((r) => columns.some((c) => String(c.accessor(r)).toLowerCase().includes(q)))
+  }, [view, query, columns])
 
   const keyCol = columns[0]
 
@@ -98,14 +100,14 @@ export default function Explorer() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
-      {state.status === 'loading' && <p role="status">Loading {tab}…</p>}
-      {state.status === 'error' && (
-        <p role="alert" className="error">Failed to load {tab}: {state.message}</p>
+      {view.status === 'loading' && <p role="status">Loading {tab}…</p>}
+      {view.status === 'error' && (
+        <p role="alert" className="error">Failed to load {tab}: {view.message}</p>
       )}
-      {state.status === 'ready' && (
+      {view.status === 'ready' && (
         <>
           <p className="explorer__count" role="status">
-            {filtered.length.toLocaleString('en-US')} of {state.rows.length.toLocaleString('en-US')} {tab}
+            {filtered.length.toLocaleString('en-US')} of {view.rows.length.toLocaleString('en-US')} {tab}
           </p>
           <DataTable columns={columns} rows={filtered} rowKey={(r) => String(keyCol.accessor(r))} />
         </>
