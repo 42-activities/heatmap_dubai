@@ -50,11 +50,12 @@ each step established.
       choropleth + monthly-2026 passengers layer using **placeholder** data
       (swap to real ridership once PROD is available; coordinate- vs zone-level
       still depends on Phase 1)
+- [x] Read-only FastAPI + Postgres backend serving stops, coverage, passengers, KPIs, GeoJSON (`api/`)
 - [ ] Dashboard (Streamlit/Folium/Plotly): map, route/zone selectors, trends, data-quality panel
 
 ## Cross-cutting
 
-- [ ] Ensure `.env` is git-ignored (add `.gitignore` if missing) before any commit
+- [x] Ensure `.env` is git-ignored (add `.gitignore` if missing) before any commit
 - [ ] Separate raw / staging / curated so reprocessing never re-hits the API
 - [ ] Log request metadata only — never secrets or full payloads
-- [ ] Add `requirements.txt` once a non-stdlib dependency is introduced
+- [x] Add `requirements.txt` once a non-stdlib dependency is introduced

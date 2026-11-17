@@ -1,4 +1,5 @@
 """Export DDA STG data to static JSON for the website (web/data/)."""
+import argparse
 import json
 import random
 import sys
@@ -10,7 +11,9 @@ import dda  # noqa: E402
 
 STOPS_PATH = "rta/rta_bus_stop_details-open-api"
 COVERAGE_PATH = "rta/rta_bus_network_coverage-open-api"
+ROUTES_PATH = "rta/rta_bus_routes-open-api"
 STOPS_TOTAL_CAP = 500000
+SECTIONS = ("stops", "coverage", "routes")
 OUT_DIR = Path(__file__).resolve().parent.parent / "web" / "data"
 
 
@@ -94,32 +97,80 @@ def write_json(out_dir, name, obj):
     return path
 
 
-def main():
+def summarize_routes(records):
+    routes = {}
+    for r in records:
+        name = r.get("route_name")
+        if name is None or name == "":
+            continue
+        cur = routes.get(name)
+        if cur is None:
+            routes[name] = {"route_name": name, "route_type": r.get("route_type"),
+                            "stop_count": 1}
+        else:
+            cur["stop_count"] += 1
+    return list(routes.values())
+
+
+def parse_only(value):
+    if not value:
+        return set(SECTIONS)
+    parts = {p.strip() for p in value.split(",") if p.strip()}
+    bad = parts - set(SECTIONS)
+    if bad:
+        raise ValueError(f"unknown --only section(s): {sorted(bad)}")
+    return parts
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--only", help="comma list of: " + ",".join(SECTIONS) + " (default all)")
+    try:
+        only = parse_only(ap.parse_args(argv).only)
+    except ValueError as e:
+        ap.error(str(e))
     cfg = dda.get_config()
     token = dda.fetch_token(cfg)
     get_json = dda.make_getter(cfg.base_url, token)
-    # Probe the server's honored page size (fetch_records treats short pages as last).
-    probe = get_json(STOPS_PATH, {"page": 1, "pageSize": 5000}).get("results") or []
-    page_size = 5000 if len(probe) == 5000 else 1000
-    print(f"probe returned {len(probe)} rows -> page_size={page_size}")
-    raw_stops = dda.fetch_records(get_json, STOPS_PATH, total=STOPS_TOTAL_CAP,
-                                  page_size=page_size, min_interval=1.05)
-    if len(raw_stops) >= STOPS_TOTAL_CAP:
-        raise RuntimeError("stops fetch hit the cap; data may be truncated")
-    raw_cov = dda.fetch_records(get_json, COVERAGE_PATH, total=2000)
-    stops = dedupe_stops(raw_stops)
-    coverage = summarize_coverage(raw_cov)
-    passengers = build_placeholder_passengers(stops)
-    write_json(OUT_DIR, "stops.json", stops)
-    write_json(OUT_DIR, "passengers.json", passengers)
-    write_json(OUT_DIR, "coverage.json", coverage)
+    meta_path = OUT_DIR / "meta.json"
+    counts = {}
+    if only != set(SECTIONS) and meta_path.exists():
+        counts = json.loads(meta_path.read_text(encoding="utf-8")).get("counts", {})
+    msg = []
+    if "stops" in only:
+        # Probe the server's honored page size (fetch_records treats short pages as last).
+        probe = get_json(STOPS_PATH, {"page": 1, "pageSize": 5000}).get("results") or []
+        page_size = 5000 if len(probe) == 5000 else 1000
+        print(f"probe returned {len(probe)} rows -> page_size={page_size}")
+        raw_stops = dda.fetch_records(get_json, STOPS_PATH, total=STOPS_TOTAL_CAP,
+                                      page_size=page_size, min_interval=1.05)
+        if len(raw_stops) >= STOPS_TOTAL_CAP:
+            raise RuntimeError("stops fetch hit the cap; data may be truncated")
+        stops = dedupe_stops(raw_stops)
+        passengers = build_placeholder_passengers(stops)
+        write_json(OUT_DIR, "stops.json", stops)
+        write_json(OUT_DIR, "passengers.json", passengers)
+        counts["stops"] = len(stops)
+        msg.append(f"raw stops={len(raw_stops)} stops={len(stops)}")
+    if "coverage" in only:
+        coverage = summarize_coverage(dda.fetch_records(get_json, COVERAGE_PATH, total=2000))
+        write_json(OUT_DIR, "coverage.json", coverage)
+        counts["coverage"] = len(coverage)
+        msg.append(f"coverage={len(coverage)}")
+    if "routes" in only:
+        raw_routes = dda.fetch_records(get_json, ROUTES_PATH, total=200000,
+                                       page_size=1000, min_interval=1.05)
+        routes = summarize_routes(raw_routes)
+        write_json(OUT_DIR, "routes.json", routes)
+        counts["routes"] = len(routes)
+        msg.append(f"raw routes={len(raw_routes)} routes={len(routes)}")
     write_json(OUT_DIR, "meta.json", {
         "environment": cfg.environment,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "counts": {"stops": len(stops), "coverage": len(coverage)},
+        "counts": counts,
         "placeholder": {"passengers": True},
     })
-    print(f"raw stops={len(raw_stops)} stops={len(stops)} coverage={len(coverage)}")
+    print(" ".join(msg))
     return 0
 
 
