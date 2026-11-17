@@ -128,7 +128,7 @@ population/coverage choropleth by community. Run it with
 `cd web && python3 -m http.server 8000`; data regeneration, the STG→PROD swap
 and attribution are in [`web/README.md`](./web/README.md).
 
-<!-- Artifact link: added after publish -->
+**Live (GitHub Pages):** https://42-activities.github.io/heatmap_dubai/ — full map with basemap (the page needs OSM tiles, so it runs on Pages rather than inside a sandboxed Artifact).
 
 ## Roadmap
 
