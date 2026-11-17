@@ -39,6 +39,9 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      DATA_DIR: /data
+    volumes:
+      - ./web/data:/data:ro
     ports:
       - "8000:8000"
     depends_on:

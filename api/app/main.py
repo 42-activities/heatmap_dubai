@@ -8,6 +8,7 @@ from sqlalchemy import text
 
 from . import settings
 from .db import engine
+from .routers.datasets import router as datasets_router
 
 log = logging.getLogger("api")
 
@@ -62,3 +63,6 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok", "db": db_ok()}
+
+
+app.include_router(datasets_router)
