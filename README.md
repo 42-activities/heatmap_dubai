@@ -6,10 +6,13 @@ into a ridership/accessibility **heatmap** and supporting analytics — where
 demand concentrates by stop and zone, when it peaks, how the network connects,
 and which communities are well or poorly served.
 
-> Status: early. Auth and the three source datasets are **verified against the
-> live STG gateway** (2026-11-17). Ingestion/warehouse/dashboard are not built
-> yet — see [`TODO.md`](./TODO.md). Working-notes and gotchas for contributors
-> (human or AI) live in [`CLAUDE.md`](./CLAUDE.md).
+> Status: early. Auth and all four source datasets are **verified against the
+> live STG gateway** (2026-11-17), and a static **heatmap web app** is built
+> (see [`web/`](./web/)) — network + community-coverage layers use real STG
+> data; the monthly-2026 passenger layer is **placeholder** until PROD ridership
+> access. The ingestion pipeline/warehouse are not built yet — see
+> [`TODO.md`](./TODO.md). Working-notes and gotchas for contributors (human or
+> AI) live in [`CLAUDE.md`](./CLAUDE.md).
 
 ## Data source
 
@@ -104,15 +107,28 @@ heatmap_dubai/
 ├── README.md              # this file
 ├── CLAUDE.md              # working notes + verified API facts + gotchas
 ├── TODO.md                # phased roadmap
+├── web/                   # Leaflet heatmap page + web/data/*.json (see web/README.md)
 ├── .env                   # credentials (git-ignored, not committed)
 ├── docs/
 │   └── api_docs/          # DDA PDFs (generic ICDs; partially inaccurate — see CLAUDE.md)
 └── scripts/               # stdlib-only verification/profiling scripts
+    ├── dda.py             # shared auth/fetch helpers
+    ├── export_web_data.py # builds web/data/
     ├── test_token.py
     ├── test_dataset.py
     ├── profile_ridership.py
     └── join_coverage.py
 ```
+
+## Heatmap web app
+
+A static Leaflet page in [`web/`](./web/) visualises the network: stop heat,
+monthly-2026 passengers in/out (**placeholder** until PROD data), and a
+population/coverage choropleth by community. Run it with
+`cd web && python3 -m http.server 8000`; data regeneration, the STG→PROD swap
+and attribution are in [`web/README.md`](./web/README.md).
+
+<!-- Artifact link: added after publish -->
 
 ## Roadmap
 

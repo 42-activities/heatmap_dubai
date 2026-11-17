@@ -11,16 +11,12 @@ Usage:
 from __future__ import annotations
 
 import json
-import os
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
 
-from test_token import BASE_URLS, TOKEN_PATH, load_env, mask
-
-TIMEOUT_SECONDS = 30
+from dda import TIMEOUT_SECONDS, fetch_token, get_config, mask
 
 # Entity/dataset guesses carried over from the plan (unverified in the PDFs).
 DEFAULT_TARGETS = [
@@ -28,31 +24,6 @@ DEFAULT_TARGETS = [
     "rta/rta_bus_stop_details-open-api",
     "rta/rta_bus_ridership-open-api",
 ]
-
-
-def fetch_token(base_url: str, security_id: str, client_id: str, client_secret: str) -> str:
-    body = json.dumps(
-        {
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": client_secret,
-        }
-    ).encode("utf-8")
-    req = urllib.request.Request(
-        base_url + TOKEN_PATH,
-        data=body,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "x-DDA-SecurityApplicationIdentifier": security_id,
-        },
-    )
-    with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
-    token = data.get("access_token")
-    if not token:
-        raise RuntimeError(f"no access_token in response: {data}")
-    return token
 
 
 def probe(base_url: str, path: str, token: str) -> None:
@@ -93,24 +64,19 @@ def probe(base_url: str, path: str, token: str) -> None:
 
 
 def main() -> int:
-    load_env(Path(__file__).resolve().parent.parent / ".env")
-    environment = os.environ.get("ENVIRONMENT", "STG").upper()
-    base_url = BASE_URLS.get(environment)
-    if base_url is None:
-        print(f"ERROR: ENVIRONMENT={environment!r} is not STG or PROD")
+    try:
+        cfg = get_config()
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
         return 2
-
-    security_id = os.environ.get("SECURITY_APPLICATION_ID", "")
-    client_id = os.environ.get("CLIENT_ID", "")
-    client_secret = os.environ.get("CLIENT_SECRET", "")
-    if not (security_id and client_id and client_secret):
+    if not (cfg.security_id and cfg.client_id and cfg.client_secret):
         print("ERROR: missing SECURITY_APPLICATION_ID / CLIENT_ID / CLIENT_SECRET")
         return 2
 
-    print(f"Environment: {environment}  base={base_url}")
-    print(f"Credentials: secId={mask(security_id)} clientId={mask(client_id)}")
+    print(f"Environment: {cfg.environment}  base={cfg.base_url}")
+    print(f"Credentials: secId={mask(cfg.security_id)} clientId={mask(cfg.client_id)}")
     try:
-        token = fetch_token(base_url, security_id, client_id, client_secret)
+        token = fetch_token(cfg)
     except Exception as exc:  # noqa: BLE001 - surface any token failure plainly
         print(f"TOKEN ERROR: {exc}")
         return 1
@@ -118,7 +84,7 @@ def main() -> int:
 
     targets = sys.argv[1:] or DEFAULT_TARGETS
     for path in targets:
-        probe(base_url, path.lstrip("/"), token)
+        probe(cfg.base_url, path.lstrip("/"), token)
     return 0
 
 
