@@ -6,10 +6,13 @@ into a ridership/accessibility **heatmap** and supporting analytics — where
 demand concentrates by stop and zone, when it peaks, how the network connects,
 and which communities are well or poorly served.
 
-> Status: early. Auth and the three source datasets are **verified against the
-> live STG gateway** (2026-11-17). Ingestion/warehouse/dashboard are not built
-> yet — see [`TODO.md`](./TODO.md). Working-notes and gotchas for contributors
-> (human or AI) live in [`CLAUDE.md`](./CLAUDE.md).
+> Status: early. Auth and all four source datasets are **verified against the
+> live STG gateway** (2026-11-17), and a static **heatmap web app** is built
+> (see [`web/`](./web/)) — network + community-coverage layers use real STG
+> data; the monthly-2026 passenger layer is **placeholder** until PROD ridership
+> access. The ingestion pipeline/warehouse are not built yet — see
+> [`TODO.md`](./TODO.md). Working-notes and gotchas for contributors (human or
+> AI) live in [`CLAUDE.md`](./CLAUDE.md).
 
 ## Data source
 
