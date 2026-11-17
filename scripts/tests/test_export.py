@@ -54,6 +54,16 @@ class TestExport(unittest.TestCase):
                  "accessible_population": 10, "geographic_coverage": 80}]
         self.assertEqual(export_web_data.summarize_coverage(rows)[0]["population"], 0)
 
+    def test_summarize_routes_dedupes_and_counts(self):
+        rows = [
+            {"route_name": "F22", "route_type": "EK", "stop_number": 1},
+            {"route_name": "F22", "route_type": "EK", "stop_number": 2},
+            {"route_name": "GE95B", "route_type": "EK", "stop_number": 1}]
+        out = {r["route_name"]: r for r in export_web_data.summarize_routes(rows)}
+        self.assertEqual(set(out), {"F22", "GE95B"})
+        self.assertEqual(out["F22"]["stop_count"], 2)
+        self.assertEqual(out["F22"]["route_type"], "EK")
+
 
 if __name__ == "__main__":
     unittest.main()
