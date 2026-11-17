@@ -3,9 +3,20 @@ import os
 
 import pytest
 
+# DESTRUCTIVE: the loader TRUNCATEs its target. This test therefore only ever
+# uses a dedicated TEST_DATABASE_URL (never the read-only DATABASE_URL).
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("DATABASE_URL"), reason="DATABASE_URL not set"
+    not os.environ.get("TEST_DATABASE_URL"), reason="TEST_DATABASE_URL not set"
 )
+
+
+@pytest.fixture(autouse=True)
+def _isolated_db(monkeypatch):
+    test_url = os.environ["TEST_DATABASE_URL"]
+    assert test_url != os.environ.get("DATABASE_URL"), (
+        "TEST_DATABASE_URL must differ from DATABASE_URL (loader test truncates)"
+    )
+    monkeypatch.setenv("DATABASE_URL", test_url)
 
 
 @pytest.fixture

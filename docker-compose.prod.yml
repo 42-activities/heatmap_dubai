@@ -1,0 +1,22 @@
+# Production override for the owner's VPS:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  db:
+    restart: unless-stopped
+    ports: !reset []          # db is reachable only on the compose network
+  loader:
+    restart: "no"
+  api:
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000" # put a reverse proxy (Caddy/nginx) in front for TLS
+    environment:
+      CORS_ORIGINS: ${CORS_ORIGINS:?set CORS_ORIGINS to the frontend origin(s) in .env}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}

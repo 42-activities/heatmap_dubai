@@ -107,6 +107,10 @@ heatmap_dubai/
 ├── README.md              # this file
 ├── CLAUDE.md              # working notes + verified API facts + gotchas
 ├── TODO.md                # phased roadmap
+├── api/                   # FastAPI + Postgres loader (see api/README.md)
+├── sql/                   # Postgres schema
+├── docker-compose.yml     # db + loader + api (docker-compose.prod.yml = VPS override)
+├── Makefile               # up/down/logs/seed/test/refresh
 ├── web/                   # Leaflet heatmap page + web/data/*.json (see web/README.md)
 ├── .env                   # credentials (git-ignored, not committed)
 ├── docs/
@@ -129,6 +133,21 @@ population/coverage choropleth by community. Run it with
 and attribution are in [`web/README.md`](./web/README.md).
 
 **Live (GitHub Pages):** https://42-activities.github.io/heatmap_dubai/ — full map with basemap (the page needs OSM tiles, so it runs on Pages rather than inside a sandboxed Artifact).
+
+## Backend (API + Postgres)
+
+A read-only **FastAPI** service backed by **Postgres** serves the same data the
+static page uses. Architecture: `React/Leaflet frontend -> FastAPI (:8000) -> Postgres`,
+with a one-shot loader seeding Postgres from `web/data/*.json`.
+
+```bash
+cp .env.example .env && make up      # db -> loader -> api on :8000
+curl localhost:8000/kpis
+make test                            # isolated; never truncates the seeded db
+```
+
+Endpoints, env vars, `make` targets, the STG->PROD refresh and VPS deploy are in
+[`api/README.md`](./api/README.md).
 
 ## Roadmap
 
