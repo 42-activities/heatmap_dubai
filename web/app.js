@@ -157,6 +157,50 @@
       });
       box.hidden = false;
     },
+
+    // ---- Population / coverage (choropleth) ----
+    // Colour ramp for geographic_coverage (0-100 %). Missing/zero-population => neutral grey.
+    coverageColor: function (row) {
+      if (!row || !(row.population > 0) || !isFinite(row.geographic_coverage)) return '#cccccc';
+      var c = Math.max(0, Math.min(100, row.geographic_coverage));
+      return c >= 80 ? '#1a9850' : c >= 60 ? '#91cf60' : c >= 40 ? '#fee08b' :
+             c >= 20 ? '#fc8d59' : '#d73027';
+    },
+
+    populationPopup: function (name, row) {
+      var esc = String(name).replace(/</g, '&lt;');
+      if (!row) return '<b>' + esc + '</b><br>No coverage data';
+      return '<b>' + esc + '</b><br>Population: ' + row.population.toLocaleString() +
+        '<br>Accessible population: ' + row.accessible_population.toLocaleString() +
+        '<br>Geographic coverage: ' + row.geographic_coverage + '%';
+    },
+
+    addPopulationLayer: function () {
+      return Promise.all([
+        App.fetchJson('data/coverage.json'),
+        App.fetchJson('data/communities.geojson')
+      ]).then(function (res) {
+        var cov = res[0], geo = res[1];
+        if (!Array.isArray(cov) || !geo || !geo.features) return null;
+        var byNum = {};
+        cov.forEach(function (r) { byNum[r.community_num] = r; });   // join key: community_num
+
+        if (!map.getPane('population')) map.createPane('population').style.zIndex = 350; // under heat/hit markers
+        var layer = L.geoJSON(geo, {
+          pane: 'population',
+          style: function (f) {
+            var row = byNum[f.properties.community_num];
+            return { color: '#555', weight: 0.7, fillColor: App.coverageColor(row), fillOpacity: row && row.population > 0 ? 0.6 : 0.25 };
+          },
+          onEachFeature: function (f, l) {
+            var row = byNum[f.properties.community_num];
+            l.bindTooltip(App.populationPopup(f.properties.name, row), { sticky: true });
+          }
+        });
+        App.addToggle('population', 'Population / bus coverage', layer, false);
+        return layer;
+      });
+    },
   };
 
   window.HeatmapApp = App;
@@ -165,5 +209,6 @@
     if (!ok) return;
     App.addNetworkLayer();
     App.addPassengerLayer();
+    App.addPopulationLayer();
   });
 })();
