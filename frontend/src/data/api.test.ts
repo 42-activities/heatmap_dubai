@@ -44,4 +44,27 @@ describe('api adapter', () => {
     fetchMock.mockRejectedValue(new TypeError('network'))
     await expect(api.getCoverage()).rejects.toBeInstanceOf(TypedError)
   })
+
+  it('getAllStops pages with limit=1000 until total reached', async () => {
+    const mk = (n: number, start: number) =>
+      Array.from({ length: n }, (_, i) => ({ stop_id: start + i, stop_name: 's', lat: 0, lon: 0 }))
+    fetchMock
+      .mockResolvedValueOnce(ok({ results: mk(1000, 0), total: 2220 }))
+      .mockResolvedValueOnce(ok({ results: mk(1000, 1000), total: 2220 }))
+      .mockResolvedValueOnce(ok({ results: mk(220, 2000), total: 2220 }))
+    const all = await api.getAllStops()
+    expect(all).toHaveLength(2220)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
+      '/api/stops?limit=1000&offset=0',
+      '/api/stops?limit=1000&offset=1000',
+      '/api/stops?limit=1000&offset=2000',
+    ])
+  })
+
+  it('getAllStops stops on an empty page even if total is inflated', async () => {
+    fetchMock.mockResolvedValue(ok({ results: [], total: 5 }))
+    expect(await api.getAllStops()).toEqual([])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })

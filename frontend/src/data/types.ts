@@ -87,6 +87,8 @@ export class TypedError extends Error {
 export interface DataSource {
   getKpis(): Promise<Kpis>
   getStops(p?: PageParams): Promise<Page<Stop>>
+  /** Every stop (pages through the API's 1000 cap in API mode). */
+  getAllStops(): Promise<Stop[]>
   getRoutes(p?: PageParams): Promise<Page<Route>>
   getCommunities(p?: PageParams): Promise<Page<Community>>
   getCoverage(): Promise<Page<Coverage>>

@@ -113,4 +113,17 @@ describe('static adapter', () => {
     st = createStatic('/base/')
     await expect(st.getCoverage()).rejects.toBeInstanceOf(TypedError)
   })
+
+  it('getAllStops returns every stop', async () => {
+    expect(await st.getAllStops()).toHaveLength(3)
+  })
+
+  it('bare getStops defaults to limit 100 like the backend', async () => {
+    files['stops.json'] = Array.from({ length: 150 }, (_, i) => ({ stop_id: i, stop_name: 's', lat: 0, lon: 0 }))
+    st = createStatic('/base/')
+    const p = await st.getStops()
+    expect(p.results).toHaveLength(100)
+    expect(p.total).toBe(150)
+    expect(await st.getAllStops()).toHaveLength(150)
+  })
 })

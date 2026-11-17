@@ -39,6 +39,15 @@ export function createApi(base: string): DataSource {
   return {
     getKpis: () => get<Kpis>('/kpis'),
     getStops: (p) => get<Page<Stop>>(`/stops${qs(p)}`),
+    async getAllStops() {
+      const LIMIT = 1000
+      const all: Stop[] = []
+      for (;;) {
+        const page = await get<Page<Stop>>(`/stops?limit=${LIMIT}&offset=${all.length}`)
+        all.push(...page.results)
+        if (page.results.length < LIMIT || all.length >= page.total) return all
+      }
+    },
     getRoutes: (p) => get<Page<Route>>(`/routes${qs(p)}`),
     getCommunities: (p) => get<Page<Community>>(`/communities${qs(p)}`),
     getCoverage: () => get<Page<Coverage>>('/coverage'),

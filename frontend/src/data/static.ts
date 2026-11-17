@@ -16,9 +16,12 @@ interface PassengersFile {
   stations: Record<string, { month: string; in: number; out: number }[]>
 }
 
+// Matches the backend's default page size so bare calls behave the same in both modes.
+const DEFAULT_LIMIT = 100
+
 function paginate<T>(all: T[], p?: PageParams): Page<T> {
   const offset = p?.offset ?? 0
-  const end = p?.limit !== undefined ? offset + p.limit : undefined
+  const end = offset + (p?.limit ?? DEFAULT_LIMIT)
   return { results: all.slice(offset, end), total: all.length }
 }
 
@@ -80,6 +83,9 @@ export function createStatic(baseUrl: string): DataSource {
     },
     async getStops(p) {
       return paginate(await load<Stop[]>('stops.json'), p)
+    },
+    async getAllStops() {
+      return load<Stop[]>('stops.json')
     },
     async getRoutes(p) {
       return paginate(await load<Route[]>('routes.json'), p)
