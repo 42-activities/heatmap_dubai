@@ -92,8 +92,8 @@ SELECT
   (SELECT count(*) FROM dim_stop) AS stops,
   (SELECT count(*) FROM dim_community) AS communities,
   (SELECT count(*) FROM dim_route) AS routes,
-  (SELECT avg(geographic_coverage) FROM fact_coverage) AS coverage_avg,
-  (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY geographic_coverage)
+  (SELECT coalesce(avg(geographic_coverage), 0) FROM fact_coverage) AS coverage_avg,
+  (SELECT coalesce(percentile_cont(0.5) WITHIN GROUP (ORDER BY geographic_coverage), 0)
      FROM fact_coverage) AS coverage_median,
   (SELECT coalesce(sum(population),0) FROM fact_coverage) AS population,
   (SELECT coalesce(sum(accessible_population),0) FROM fact_coverage) AS accessible_population,
@@ -119,6 +119,8 @@ def communities_geojson():
             gj = json.load(fh)
     except FileNotFoundError:
         raise HTTPException(status_code=503, detail="communities.geojson not available")
+    except (json.JSONDecodeError, ValueError):
+        raise HTTPException(status_code=503, detail="communities.geojson is malformed")
     with _conn() as c:
         rows = c.execute(text(
             "SELECT community_num, population, accessible_population, geographic_coverage "
