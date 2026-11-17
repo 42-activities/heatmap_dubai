@@ -8,8 +8,8 @@ services:
     restart: "no"
   api:
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8000:8000" # put a reverse proxy (Caddy/nginx) in front for TLS
+    # !override replaces (not appends to) the base "8000:8000" mapping
+    ports: !override ["127.0.0.1:8000:8000"]  # reverse proxy (Caddy/nginx) in front for TLS
     environment:
       CORS_ORIGINS: ${CORS_ORIGINS:?set CORS_ORIGINS to the frontend origin(s) in .env}
     healthcheck:

@@ -73,6 +73,8 @@ Interactive docs: `http://localhost:8000/docs`.
 
 ## VPS deploy
 
+Requires Docker Compose 2.24+ (the override uses `!reset` / `!override`).
+
 ```bash
 git clone <repo> && cd heatmap_dubai
 cp .env.example .env     # set a strong POSTGRES_PASSWORD, matching DATABASE_URL, CORS_ORIGINS=https://your-frontend
