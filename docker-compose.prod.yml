@@ -20,3 +20,9 @@ services:
     logging:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
+  frontend:
+    restart: unless-stopped   # public tier; owner's TLS proxy forwards to this port
+    ports: !override ["127.0.0.1:8080:80"]
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
