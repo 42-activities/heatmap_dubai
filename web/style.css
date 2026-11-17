@@ -10,6 +10,9 @@ html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
 #controls h1 { font-size: 15px; margin: 0 0 6px; }
 #controls label { display: block; margin: 4px 0; cursor: pointer; }
 
+#passenger-controls { border-top: 1px solid #ddd; margin-top: 6px; padding-top: 4px; }
+#passenger-controls label[for], #passenger-controls input[type=radio] { margin-right: 4px; }
+
 #sample-badge {
   position: absolute; bottom: 24px; left: 12px; z-index: 1000;
   background: #d9480f; color: #fff; font-weight: 700; letter-spacing: 0.05em;
