@@ -51,7 +51,8 @@ each step established.
       (swap to real ridership once PROD is available; coordinate- vs zone-level
       still depends on Phase 1)
 - [x] Read-only FastAPI + Postgres backend serving stops, coverage, passengers, KPIs, GeoJSON (`api/`)
-- [ ] Dashboard (Streamlit/Folium/Plotly): map, route/zone selectors, trends, data-quality panel
+- [x] Dashboard: React SPA (`frontend/`) with map, explorer tables, charts, data page; nginx container + Pages deploy
+- [ ] Data-quality panel / route-zone trend views
 
 ## Cross-cutting
 

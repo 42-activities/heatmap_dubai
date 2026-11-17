@@ -50,5 +50,14 @@ services:
       loader:
         condition: service_completed_successfully
 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
 volumes:
   pgdata:

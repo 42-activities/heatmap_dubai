@@ -109,9 +109,11 @@ heatmap_dubai/
 ├── TODO.md                # phased roadmap
 ├── api/                   # FastAPI + Postgres loader (see api/README.md)
 ├── sql/                   # Postgres schema
-├── docker-compose.yml     # db + loader + api (docker-compose.prod.yml = VPS override)
+├── docker-compose.yml     # db + loader + api + frontend (docker-compose.prod.yml = VPS override)
 ├── Makefile               # up/down/logs/seed/test/refresh
-├── web/                   # Leaflet heatmap page + web/data/*.json (see web/README.md)
+├── frontend/              # React SPA (Vite) + nginx Dockerfile (see frontend/README.md)
+├── .github/workflows/     # Pages deploy of the SPA
+├── web/                   # classic Leaflet heatmap page (superseded; local) + web/data/*.json (see web/README.md)
 ├── .env                   # credentials (git-ignored, not committed)
 ├── docs/
 │   └── api_docs/          # DDA PDFs (generic ICDs; partially inaccurate — see CLAUDE.md)
@@ -133,6 +135,22 @@ population/coverage choropleth by community. Run it with
 and attribution are in [`web/README.md`](./web/README.md).
 
 **Live (GitHub Pages):** https://42-activities.github.io/heatmap_dubai/ — full map with basemap (the page needs OSM tiles, so it runs on Pages rather than inside a sandboxed Artifact).
+
+## Frontend (React SPA)
+
+The main UI is the React + TypeScript SPA in [`frontend/`](./frontend/)
+(Overview, Heatmap, Explorer, Data). Architecture:
+`React SPA (nginx :8080) -> /api -> FastAPI (:8000) -> Postgres`, seeded by a
+one-shot loader from `web/data/*.json`.
+
+```bash
+make up && docker compose up -d --build frontend   # http://localhost:8080
+```
+
+The SPA also has a static mode (no API; bundles `web/data`) which is what
+GitHub Pages serves, so the SPA **replaces** the classic `web/` map as the
+Pages site (Pages source: GitHub Actions). The classic `web/` page is
+superseded and kept for local use. Details: [`frontend/README.md`](./frontend/README.md).
 
 ## Backend (API + Postgres)
 
