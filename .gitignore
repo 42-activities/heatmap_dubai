@@ -228,3 +228,7 @@ docs/api_docs/
 
 # SDD scratch workspace (ledger, briefs, review packages) — never commit
 .superpowers/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
