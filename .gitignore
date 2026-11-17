@@ -221,3 +221,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Vendor API PDFs — DDA "Confidential - Category B", no-reproduction clause.
+# Kept local, not pushed. Remove this line if cleared to share them.
+docs/api_docs/
