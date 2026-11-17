@@ -43,6 +43,8 @@ List endpoints return `{"results": [...], "total": N}`; `limit`/`offset` where n
 | `/kpis` | totals, coverage avg/median, population, `passengers_placeholder` |
 | `/communities.geojson` | community polygons with coverage properties merged in |
 
+> Note: a few communities have coverage rows but no polygon (e.g. community 301), so they appear in `/coverage` and `/kpis` but are **absent** from `/communities.geojson` — don't treat the FeatureCollection as the complete community set.
+
 ```bash
 curl 'localhost:8000/stops?limit=3'
 curl 'localhost:8000/passengers?month=2026-06&direction=in&limit=5'

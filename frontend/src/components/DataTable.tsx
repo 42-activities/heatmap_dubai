@@ -27,10 +27,15 @@ export default function DataTable<T>({ columns, rows, rowKey, pageSize = 25 }: P
     return [...rows].sort((a, b) => {
       const x = col.accessor(a)
       const y = col.accessor(b)
-      if (typeof x === 'number' && typeof y === 'number') return (x - y) * m
-      return String(x).localeCompare(String(y), undefined, { numeric: true }) * m
+      const cmp =
+        typeof x === 'number' && typeof y === 'number'
+          ? x - y
+          : String(x).localeCompare(String(y), undefined, { numeric: true })
+      if (cmp !== 0) return cmp * m
+      // deterministic tie-breaker so equal values keep a stable order
+      return String(rowKey(a)).localeCompare(String(rowKey(b)), undefined, { numeric: true })
     })
-  }, [rows, columns, sort])
+  }, [rows, columns, sort, rowKey])
 
   const pages = Math.max(1, Math.ceil(sorted.length / pageSize))
   useEffect(() => setPage(0), [rows])

@@ -105,7 +105,10 @@ export default function Heatmap() {
     )
   }
 
-  const badge = showPassengers && pax?.placeholder === true
+  // Badge reflects the CURRENTLY selected month's data only (not a stale fetch).
+  const badge = showPassengers && pax?.month === month && pax.placeholder === true
+  const paxLoading =
+    showPassengers && !paxError && (pax?.month !== month || maxes[direction] === undefined)
   return (
     <section className="heatmap">
       <h1>Heatmap</h1>
@@ -121,6 +124,7 @@ export default function Heatmap() {
           </label>
           <label><input type="radio" name="direction" disabled={!showPassengers} value="in" checked={direction === 'in'} onChange={() => setDirection('in')} /> In</label>
           <label><input type="radio" name="direction" disabled={!showPassengers} value="out" checked={direction === 'out'} onChange={() => setDirection('out')} /> Out</label>
+          {paxLoading && <span role="status" className="map-controls__loading">Loading passengers…</span>}
           {paxError && <span role="alert" className="error">Passenger data failed: {paxError}</span>}
         </div>
       </div>

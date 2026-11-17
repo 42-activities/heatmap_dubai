@@ -8,7 +8,7 @@ vi.mock('../data', () => ({
 }))
 
 // jsdom can't draw a map: stub react-leaflet, leaflet and leaflet.heat.
-const heatLayer = vi.hoisted(() => vi.fn((..._a: unknown[]) => ({ addTo: vi.fn().mockReturnThis(), remove: vi.fn() })))
+const heatLayer = vi.hoisted(() => vi.fn(() => ({ addTo: vi.fn().mockReturnThis(), remove: vi.fn() })))
 vi.mock('../components/map/leaflet-global', () => ({}))
 vi.mock('leaflet.heat', () => ({}))
 vi.mock('leaflet', () => {
