@@ -104,15 +104,28 @@ heatmap_dubai/
 ├── README.md              # this file
 ├── CLAUDE.md              # working notes + verified API facts + gotchas
 ├── TODO.md                # phased roadmap
+├── web/                   # Leaflet heatmap page + web/data/*.json (see web/README.md)
 ├── .env                   # credentials (git-ignored, not committed)
 ├── docs/
 │   └── api_docs/          # DDA PDFs (generic ICDs; partially inaccurate — see CLAUDE.md)
 └── scripts/               # stdlib-only verification/profiling scripts
+    ├── dda.py             # shared auth/fetch helpers
+    ├── export_web_data.py # builds web/data/
     ├── test_token.py
     ├── test_dataset.py
     ├── profile_ridership.py
     └── join_coverage.py
 ```
+
+## Heatmap web app
+
+A static Leaflet page in [`web/`](./web/) visualises the network: stop heat,
+monthly-2026 passengers in/out (**placeholder** until PROD data), and a
+population/coverage choropleth by community. Run it with
+`cd web && python3 -m http.server 8000`; data regeneration, the STG→PROD swap
+and attribution are in [`web/README.md`](./web/README.md).
+
+<!-- Artifact link: added after publish -->
 
 ## Roadmap
 

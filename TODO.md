@@ -45,9 +45,11 @@ each step established.
 ## Phase 4 — Analytics & heatmap
 
 - [ ] Metrics: ridership by stop/zone/route/hour/day; zone-to-zone flows; peak hours
-- [ ] Accessibility metrics from coverage (geographic_coverage %, accessible_population)
-- [ ] **Heatmap** of demand (coordinate- or zone-level per Phase 1 finding) +
-      community accessibility layer
+- [x] Accessibility metrics from coverage (geographic_coverage %, accessible_population)
+- [x] **Heatmap** built (`web/`): network stop heat + community coverage
+      choropleth + monthly-2026 passengers layer using **placeholder** data
+      (swap to real ridership once PROD is available; coordinate- vs zone-level
+      still depends on Phase 1)
 - [ ] Dashboard (Streamlit/Folium/Plotly): map, route/zone selectors, trends, data-quality panel
 
 ## Cross-cutting
