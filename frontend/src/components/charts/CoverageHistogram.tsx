@@ -8,7 +8,7 @@ export function bucketCoverage(rows: Coverage[], buckets = 10) {
     count: 0,
   }))
   for (const r of rows) {
-    const i = Math.min(buckets - 1, Math.max(0, Math.floor(r.geographic_coverage * buckets)))
+    const i = Math.min(buckets - 1, Math.max(0, Math.floor(r.geographic_coverage * buckets / 100)))
     out[i].count += 1
   }
   return out

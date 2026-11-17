@@ -7,7 +7,8 @@ import PopulationScatter from '../components/charts/PopulationScatter'
 import TopBottomCommunities from '../components/charts/TopBottomCommunities'
 
 const num = (n: number) => Math.round(n).toLocaleString('en-US')
-const pct = (n: number) => `${(n * 100).toFixed(1)}%`
+const pct = (n: number) => `${(n * 100).toFixed(1)}%` // for 0-1 ratios
+const pctRaw = (n: number) => `${n.toFixed(1)}%` // for values already 0-100
 
 type State =
   | { status: 'loading' }
@@ -49,8 +50,8 @@ function Ready({ kpis, rows }: { kpis: Kpis; rows: Coverage[] }) {
         <KpiTile label="Bus stops" value={num(kpis.stops)} />
         <KpiTile label="Communities" value={num(kpis.communities)} />
         <KpiTile label="Routes" value={num(kpis.routes)} />
-        <KpiTile label="Coverage (average)" value={pct(kpis.coverage_avg)} sublabel="geographic, per community" />
-        <KpiTile label="Coverage (median)" value={pct(kpis.coverage_median)} sublabel="geographic, per community" />
+        <KpiTile label="Coverage (average)" value={pctRaw(kpis.coverage_avg)} sublabel="geographic, per community" />
+        <KpiTile label="Coverage (median)" value={pctRaw(kpis.coverage_median)} sublabel="geographic, per community" />
         <KpiTile label="Population" value={num(kpis.population)} />
         <KpiTile label="Accessible population" value={num(kpis.accessible_population)} sublabel={`${pct(accessible)} of population`} />
       </div>

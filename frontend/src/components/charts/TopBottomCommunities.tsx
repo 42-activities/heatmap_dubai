@@ -5,7 +5,7 @@ import ChartCard, { axisStyle, tooltipStyle } from './ChartCard'
 export function topBottom(rows: Coverage[], n = 5) {
   const sorted = [...rows].sort((a, b) => b.geographic_coverage - a.geographic_coverage)
   const pick = sorted.length <= 2 * n ? sorted : [...sorted.slice(0, n), ...sorted.slice(-n)]
-  return pick.map((r) => ({ name: r.community_name, pct: +(r.geographic_coverage * 100).toFixed(1) }))
+  return pick.map((r) => ({ name: r.community_name, pct: +r.geographic_coverage.toFixed(1) }))
 }
 
 export default function TopBottomCommunities({ rows }: { rows: Coverage[] }) {

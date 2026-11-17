@@ -3,7 +3,7 @@ import type { Coverage } from '../../data'
 import ChartCard, { axisStyle, tooltipStyle } from './ChartCard'
 
 export default function PopulationScatter({ rows }: { rows: Coverage[] }) {
-  const d = rows.map((r) => ({ name: r.community_name, population: r.population, pct: +(r.geographic_coverage * 100).toFixed(1) }))
+  const d = rows.map((r) => ({ name: r.community_name, population: r.population, pct: +r.geographic_coverage.toFixed(1) }))
   return (
     <ChartCard title="Population vs coverage (each dot is a community)">
       <ResponsiveContainer width="100%" height={280}>
