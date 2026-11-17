@@ -50,3 +50,13 @@ a { color: var(--accent); }
   .nav__links a { text-align: center; padding: .6rem .25rem; }
   .layout__main { padding: .75rem; }
 }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .85rem 1rem; }
+.kpi__label { color: var(--muted); font-size: .85rem; }
+.kpi__value { font-size: 1.6rem; font-weight: 700; }
+.kpi__sub { color: var(--muted); font-size: .8rem; }
+.badge-sample { margin-left: .5rem; padding: 0 .4rem; border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; font-size: .65rem; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 1rem; }
+.chart { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .85rem 1rem; min-width: 0; }
+.chart__title { font-weight: 600; margin-bottom: .5rem; }
+.error { color: var(--text); background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius); padding: .75rem 1rem; }
