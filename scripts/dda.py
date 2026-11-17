@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -123,6 +124,7 @@ def fetch_records(
     path: str,
     total: int,
     page_size: int = 1000,
+    min_interval: float = 0.0,
 ) -> list[dict]:
     """Paginate via page/pageSize, concatenating `results`.
 
@@ -131,7 +133,13 @@ def fetch_records(
     """
     records: list[dict] = []
     page = 1
+    last_req = None
     while len(records) < total:
+        if min_interval > 0 and last_req is not None:
+            wait = min_interval - (time.monotonic() - last_req)
+            if wait > 0:
+                time.sleep(wait)
+        last_req = time.monotonic()
         want = min(page_size, total - len(records))
         try:
             data = get_json(path, {"page": page, "pageSize": want})
