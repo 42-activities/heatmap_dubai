@@ -47,6 +47,7 @@ export default function StationMarkers({ stops, counts }: Props) {
     return () => {
       map.closePopup()
       group.remove()
+      renderer.remove()
     }
   }, [map, stops])
 

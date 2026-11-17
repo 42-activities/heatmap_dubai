@@ -109,6 +109,12 @@ export function createStatic(baseUrl: string): DataSource {
       results.sort((a, b) => a.stop_id - b.stop_id)
       return { results, total: results.length }
     },
+    async getPassengerMax(direction) {
+      const pax = await load<PassengersFile>('passengers.json')
+      let max = 0
+      for (const rows of Object.values(pax.stations)) for (const r of rows) if (r[direction] > max) max = r[direction]
+      return max
+    },
     async getCommunitiesGeoJson() {
       const [geo, cov] = await Promise.all([load<CommunityGeoJson>('communities.geojson'), coverage()])
       const byNum = new Map(cov.map((c) => [c.community_num, c]))

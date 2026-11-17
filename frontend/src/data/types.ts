@@ -93,5 +93,7 @@ export interface DataSource {
   getCommunities(p?: PageParams): Promise<Page<Community>>
   getCoverage(): Promise<Page<Coverage>>
   getPassengers(month: string, direction: Direction): Promise<Page<PassengerCount>>
+  /** Global max count over all months for a direction (for comparable heat intensity). */
+  getPassengerMax(direction: Direction): Promise<number>
   getCommunitiesGeoJson(): Promise<CommunityGeoJson>
 }

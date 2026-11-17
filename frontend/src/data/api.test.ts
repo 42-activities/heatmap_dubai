@@ -22,6 +22,20 @@ describe('api adapter', () => {
     expect(r).toEqual({ results: [{ stop_id: 1, count: 5, placeholder: true }], total: 1 })
   })
 
+  it('getPassengerMax takes the max over 12 months and caches per direction', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      const m = Number(/month=2026-(\d\d)/.exec(url)![1])
+      return ok({ results: [{ stop_id: 1, count: m * 10, placeholder: true }], total: 1 })
+    })
+    const a = createApi('/api')
+    expect(await a.getPassengerMax('in')).toBe(120)
+    expect(fetchMock).toHaveBeenCalledTimes(12)
+    expect(await a.getPassengerMax('in')).toBe(120)
+    expect(fetchMock).toHaveBeenCalledTimes(12)
+    await a.getPassengerMax('out')
+    expect(fetchMock).toHaveBeenCalledTimes(24)
+  })
+
   it('getStops passes limit/offset', async () => {
     fetchMock.mockResolvedValue(ok({ results: [], total: 0 }))
     await api.getStops({ limit: 10, offset: 20 })

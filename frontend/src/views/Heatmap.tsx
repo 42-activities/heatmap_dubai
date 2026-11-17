@@ -29,6 +29,7 @@ export default function Heatmap() {
   const [month, setMonth] = useState(MONTHS[0])
   const [direction, setDirection] = useState<Direction>('in')
   const [pax, setPax] = useState<Passengers | null>(null)
+  const [maxes, setMaxes] = useState<Partial<Record<Direction, number>>>({})
   const [paxError, setPaxError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -66,21 +67,34 @@ export default function Heatmap() {
     }
   }, [showPassengers, month])
 
+  // Global max per direction (all months) so intensities are comparable across months.
+  useEffect(() => {
+    if (!showPassengers) return
+    let live = true
+    data
+      .getPassengerMax(direction)
+      .then((v) => live && setMaxes((m) => ({ ...m, [direction]: v })))
+      .catch((e) => live && setPaxError(msg(e)))
+    return () => {
+      live = false
+    }
+  }, [showPassengers, direction])
+
   const networkPoints = useMemo<HeatPoint[]>(() => (stops ?? []).map((s) => [s.lat, s.lon]), [stops])
 
-  // Weight normalised by the max of the selected month + direction; empty month => no points.
+  // Weight normalised by the global max for the direction; empty month => no points.
   const passengerPoints = useMemo<HeatPoint[]>(() => {
-    if (!stops || !pax || pax.month !== month) return []
+    const gmax = maxes[direction]
+    if (!stops || !pax || pax.month !== month || gmax === undefined) return []
     const counts = pax[direction]
-    let max = 1
-    for (const v of counts.values()) if (v > max) max = v
+    const max = gmax > 0 ? gmax : 1
     const pts: HeatPoint[] = []
     for (const s of stops) {
       const c = counts.get(s.stop_id)
       if (c && c > 0) pts.push([s.lat, s.lon, c / max])
     }
     return pts
-  }, [stops, pax, month, direction])
+  }, [stops, pax, month, direction, maxes])
 
   if (error || !stops || !geo) {
     return (

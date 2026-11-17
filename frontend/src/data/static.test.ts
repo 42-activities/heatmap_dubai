@@ -51,6 +51,11 @@ describe('static adapter', () => {
   })
   afterEach(() => vi.unstubAllGlobals())
 
+  it('getPassengerMax returns the global max over all stations and months per direction', async () => {
+    expect(await st.getPassengerMax('in')).toBe(22)
+    expect(await st.getPassengerMax('out')).toBe(23)
+  })
+
   it('reads from BASE_URL/data', async () => {
     await st.getStops()
     expect(fetchMock.mock.calls[0][0]).toBe('/base/data/stops.json')

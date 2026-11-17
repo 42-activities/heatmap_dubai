@@ -4,6 +4,7 @@ import {
   type CommunityGeoJson,
   type Coverage,
   type DataSource,
+  type Direction,
   type Kpis,
   type Page,
   type PageParams,
@@ -36,7 +37,10 @@ export function createApi(base: string): DataSource {
     return s ? `?${s}` : ''
   }
 
-  return {
+  const maxCache = new Map<Direction, Promise<number>>()
+  const MONTHS = Array.from({ length: 12 }, (_, i) => `2026-${String(i + 1).padStart(2, '0')}`)
+
+  const api: DataSource = {
     getKpis: () => get<Kpis>('/kpis'),
     getStops: (p) => get<Page<Stop>>(`/stops${qs(p)}`),
     async getAllStops() {
@@ -60,6 +64,18 @@ export function createApi(base: string): DataSource {
         total: raw.total,
       }
     },
+    getPassengerMax(direction) {
+      let p = maxCache.get(direction)
+      if (!p) {
+        p = Promise.all(MONTHS.map((m) => api.getPassengers(m, direction))).then((pages) =>
+          pages.reduce((mx, pg) => pg.results.reduce((a, r) => Math.max(a, r.count), mx), 0),
+        )
+        p.catch(() => maxCache.delete(direction)) // do not cache failures
+        maxCache.set(direction, p)
+      }
+      return p
+    },
     getCommunitiesGeoJson: () => get<CommunityGeoJson>('/communities.geojson'),
   }
+  return api
 }
