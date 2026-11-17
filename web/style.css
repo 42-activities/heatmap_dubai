@@ -26,3 +26,6 @@ html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
 }
 
 [hidden] { display: none !important; }
+
+/* heat canvases must not capture clicks meant for station hit-markers */
+.leaflet-heatmap-layer { pointer-events: none; }

@@ -88,6 +88,7 @@
     // Rebuild the heat layer for the selected month + direction.
     updatePassengerLayer: function () {
       if (!App.passengerGroup || !App.passengers) return;
+      map.closePopup();   // avoid a stale-month popup
       var dir = App.direction, max = App.passengerMax[dir] || 1, pts = [];
       App.stops.forEach(function (s) {
         var row = App.passengerRow(s.stop_id, App.month);
