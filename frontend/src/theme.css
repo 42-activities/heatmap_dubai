@@ -69,3 +69,18 @@ a { color: var(--accent); }
 .sample-badge { position: absolute; bottom: 24px; left: 12px; z-index: 1000; background: #d9480f; color: #fff; font-weight: 700; letter-spacing: .05em; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
 .leaflet-heatmap-layer { pointer-events: none; }
 [hidden] { display: none !important; }
+
+/* Explorer / DataTable */
+.explorer__tabs { display: flex; gap: .5rem; margin: .5rem 0; flex-wrap: wrap; }
+.explorer__tabs button { background: var(--surface); color: var(--muted); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .85rem; cursor: pointer; }
+.explorer__tabs button.active { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+.explorer__search { width: 100%; max-width: 24rem; box-sizing: border-box; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: .45rem .7rem; }
+.explorer__count { color: var(--muted); font-size: .85rem; }
+.dt__scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.dt table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+.dt th, .dt td { text-align: left; padding: .45rem .75rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.dt th button { all: unset; cursor: pointer; font-weight: 600; color: var(--text); }
+.dt th button:focus-visible { outline: 2px solid var(--accent); }
+.dt__pager { display: flex; gap: .75rem; align-items: center; justify-content: flex-end; margin: .6rem 0; color: var(--muted); }
+.dt__pager button { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: .3rem .8rem; cursor: pointer; }
+.dt__pager button:disabled { opacity: .5; cursor: default; }
