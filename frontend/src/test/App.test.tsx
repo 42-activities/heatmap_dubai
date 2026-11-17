@@ -15,12 +15,13 @@ describe('App shell', () => {
     }
   })
 
-  it('renders the matching view for a route', () => {
+  it('renders the matching view for a route', async () => {
     render(
       <MemoryRouter initialEntries={['/heatmap']}>
         <App />
       </MemoryRouter>,
     )
-    expect(screen.getByRole('heading', { level: 1, name: 'Heatmap' })).toBeInTheDocument()
+    // Views are lazy-loaded, so the heading appears after the chunk resolves.
+    expect(await screen.findByRole('heading', { level: 1, name: 'Heatmap' })).toBeInTheDocument()
   })
 })

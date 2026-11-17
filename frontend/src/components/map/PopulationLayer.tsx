@@ -20,7 +20,7 @@ export function populationTooltip(p: CommunityProperties): string {
   return (
     `<b>${esc(p.name)}</b><br>Population: ${p.population.toLocaleString()}` +
     `<br>Accessible population: ${(p.accessible_population ?? 0).toLocaleString()}` +
-    `<br>Geographic coverage: ${p.geographic_coverage ?? 'n/a'}%`
+    `<br>Geographic coverage: ${p.geographic_coverage != null ? p.geographic_coverage + '%' : 'n/a'}`
   )
 }
 
