@@ -54,7 +54,9 @@ def get_config() -> Config:
     Raises ValueError for an unknown ENVIRONMENT.
     """
     load_env(ENV_PATH)
-    environment = os.environ.get("ENVIRONMENT", "STG").upper()
+    # Tolerate an inline comment / stray whitespace after the value in .env,
+    # e.g. "ENVIRONMENT=PROD   # for real data".
+    environment = os.environ.get("ENVIRONMENT", "STG").split("#", 1)[0].strip().upper()
     base_url = BASE_URLS.get(environment)
     if base_url is None:
         raise ValueError(f"ENVIRONMENT={environment!r} is not STG or PROD")
