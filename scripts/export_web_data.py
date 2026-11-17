@@ -109,7 +109,7 @@ def summarize_routes(records):
                             "stop_count": 1}
         else:
             cur["stop_count"] += 1
-    return list(routes.values())
+    return sorted(routes.values(), key=lambda r: r["route_name"])
 
 
 def parse_only(value):
