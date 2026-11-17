@@ -20,6 +20,26 @@ class TestExport(unittest.TestCase):
         self.assertTrue(len(out) == 1 and out[0]["stop_name"] == "New")
         self.assertEqual(set(out[0]), {"stop_id", "stop_name", "lat", "lon"})
 
+    def test_dedupe_coerces_float_stop_id_to_int(self):
+        rows = [{"stop_id": 2032.0, "stop_name": "F", "stop_location_latitude": 25.2,
+                 "stop_location_longitude": 55.3, "valid_from": "2020-01-01"}]
+        out = export_web_data.dedupe_stops(rows)
+        self.assertEqual(out[0]["stop_id"], 2032)
+        self.assertIsInstance(out[0]["stop_id"], int)
+
+    def test_dedupe_drops_non_numeric_stop_id(self):
+        rows = [{"stop_id": "abc", "stop_name": "F", "stop_location_latitude": 25.2,
+                 "stop_location_longitude": 55.3, "valid_from": "2020-01-01"}]
+        self.assertEqual(export_web_data.dedupe_stops(rows), [])
+
+    def test_dedupe_drops_sentinel_coords_keeps_nearby(self):
+        rows = [{"stop_id": 1, "stop_name": "S", "stop_location_latitude": 25.0,
+                 "stop_location_longitude": 55.0, "valid_from": "2020-01-01"},
+                {"stop_id": 2, "stop_name": "R", "stop_location_latitude": 25.2,
+                 "stop_location_longitude": 55.3, "valid_from": "2020-01-01"}]
+        out = export_web_data.dedupe_stops(rows)
+        self.assertEqual([o["stop_id"] for o in out], [2])
+
     def test_placeholder_is_deterministic_and_monthly_2026(self):
         stops = [{"stop_id": 1, "stop_name": "A", "lat": 25.0, "lon": 55.0}]
         a = export_web_data.build_placeholder_passengers(stops)

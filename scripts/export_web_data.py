@@ -30,9 +30,12 @@ def dedupe_stops(records):
     for r in records:
         lat = _num(r.get("stop_location_latitude"))
         lon = _num(r.get("stop_location_longitude"))
-        sid = r.get("stop_id")
-        if lat is None or lon is None or sid is None:
+        sf = _num(r.get("stop_id"))
+        if lat is None or lon is None or sf is None:
             continue
+        if lat == 25.0 and lon == 55.0:  # source sentinel, not a real location
+            continue
+        sid = int(sf)
         vf = str(r.get("valid_from") or "")
         cur = best.get(sid)
         if cur is None or vf >= cur[0]:
